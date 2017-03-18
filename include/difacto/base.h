@@ -30,7 +30,7 @@ typedef std::vector<std::pair<std::string, std::string>> KWArgs;
  * \brief reverse the feature ID to make it more uniform in default
  */
 #ifndef REVERSE_FEATURE_ID
-#define REVERSE_FEATURE_ID 0
+#define REVERSE_FEATURE_ID 1
 #endif
 /**
  * \brief reverse the bytes of x to make it more uniformly spanning the space
