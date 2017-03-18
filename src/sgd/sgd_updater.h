@@ -20,50 +20,37 @@ namespace difacto {
 struct SGDEntry {
  public:
   SGDEntry() { }
-  ~SGDEntry() { delete [] V; }
+  ~SGDEntry() { delete [] V; delete [] Z;}
   /** \brief the number of appearence of this feature in the data so far */
   real_t fea_cnt = 0;
-  /** \brief w and its aux data */
-  real_t w = 0, sqrt_g = 0, z = 0;
   /** \brief V and its aux data */
   real_t *V = nullptr;
-  /** \brief size of w+V */
-  int size = 1;
+  real_t *Z = nullptr;
+  /** \brief size of V */
+  int size = 0;
+  int nnz = 0;
   /** \brief wether entry is empty */
-  inline bool empty() const { return (w == 0 && size == 1); }
+  inline bool empty() const { return nnz == 0; }
   /** \brief save this entry */
   void SaveEntry(bool save_aux, dmlc::Stream* fo) const {
+    if (size == 0) return;
     fo->Write(&size, sizeof(size));
-    // save w
-    fo->Write(&w, sizeof(real_t));
-    if (save_aux) {
-      fo->Write(&sqrt_g, sizeof(real_t));
-      fo->Write(&z, sizeof(real_t));
-    }
-    if (size == 1) return;
     // save V
-    int n = size - 1;
-    fo->Write(V, sizeof(real_t)*n);
-    if (save_aux) fo->Write(V+n, sizeof(real_t)*n);
+    fo->Write(V, sizeof(real_t)*size);
+    if (save_aux) fo->Write(Z, sizeof(real_t)*size);
   }
   /** \brief load this entry */
   void LoadEntry(dmlc::Stream* fi, bool has_aux) {
     CHECK_EQ(fi->Read(&size, sizeof(size)), sizeof(size));
-    // load w
-    CHECK_EQ(fi->Read(&w, sizeof(real_t)), sizeof(real_t));
-    if (has_aux) {
-      CHECK_EQ(fi->Read(&sqrt_g, sizeof(real_t)), sizeof(real_t));
-      CHECK_EQ(fi->Read(&z, sizeof(real_t)), sizeof(real_t));
-    }
-    if (size == 1) return;
     // load V
-    int n = size - 1;
-    V = new real_t[n*2];
-    CHECK_EQ(fi->Read(V, sizeof(real_t)*n), sizeof(real_t)*n);
+    V = new real_t[size];
+    Z = new real_t[size];
+    CHECK_EQ(fi->Read(V, sizeof(real_t)*size), sizeof(real_t)*size);
+    for (int i = 0; i < size; ++i) { if (V[i] != 0) nnz += 1; }
     if (has_aux) {
-      CHECK_EQ(fi->Read(V+n, sizeof(real_t)*n), sizeof(real_t)*n);
+      CHECK_EQ(fi->Read(Z, sizeof(real_t)*size), sizeof(real_t)*size);
     } else {
-      memset(V+n, 0, sizeof(real_t)*n);
+      memset(Z, 0, sizeof(real_t)*size);
     }
   }
 };
@@ -88,8 +75,8 @@ class SGDUpdater : public Updater {
     while (true) {
       if (fi->Read(&key, sizeof(feaid_t)) != sizeof(feaid_t)) break;
       model_[key].LoadEntry(fi, has_aux);
+      new_w += model_[key].nnz;
     }
-    new_w = model_.size();
     LOG(INFO) << "loaded " << new_w << " kv pairs";
   };
 
@@ -114,21 +101,15 @@ class SGDUpdater : public Updater {
       os << key;
 
       /** \ here dump entry to avoid passing os */
-      // dump w
-      os << '\t' << it.second.size << '\t' << it.second.w;
-      if (dump_aux) {
-        os << '\t' << it.second.sqrt_g << '\t' << it.second.z;
-      }
+      os << '\t' << it.second.size;
       // dump V
-      if (it.second.size > 1) {
-        int n = it.second.size - 1;
-        for (int i = 0; i < n; ++i) {
-          os << '\t' << it.second.V[i];
-        }
-        if (dump_aux) {
-          for (int i = n; i < 2*n; ++i) {
-            os << '\t' << it.second.V[i];
-          }
+      int n = it.second.size;
+      for (int i = 0; i < n; ++i) {
+        os << '\t' << it.second.V[i];
+      }
+      if (dump_aux) {
+        for (int i = n; i < n; ++i) {
+          os << '\t' << it.second.Z[i];
         }
       }
 
@@ -162,8 +143,6 @@ class SGDUpdater : public Updater {
   const SGDUpdaterParam& param() const { return param_; }
 
  private:
-  /** \brief update w by FTRL */
-  void UpdateW(real_t gw, SGDEntry* e);
 
   /** \brief update V by adagrad */
   void UpdateV(real_t const* gV, SGDEntry* e);
@@ -173,6 +152,9 @@ class SGDUpdater : public Updater {
 
   /** \brief new w for a server */
   float new_w = 0;
+
+  /** \brief dim of a feature */
+  int feat_dim = 0;
 
   SGDUpdaterParam param_;
   std::unordered_map<feaid_t, SGDEntry> model_;

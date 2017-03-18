@@ -4,7 +4,6 @@
 #include "difacto/learner.h"
 #include "common/arg_parser.h"
 #include "dmlc/parameter.h"
-#include "reader/converter.h"
 #include "reader/dump.h"
 namespace difacto {
 
@@ -12,7 +11,6 @@ enum DifactoTask {
   kTrain = 0,
   kDumpModel = 1,
   kPredict = 2,
-  kConvert = 3
 };
 
 struct DifactoParam : public dmlc::Parameter<DifactoParam> {
@@ -21,7 +19,6 @@ struct DifactoParam : public dmlc::Parameter<DifactoParam> {
    * - train: train a model, which is the default
    * - dump: dump model to readable format
    * - predict: predict by using a trained model
-   * - convert: convert data from one format into another
    */
   int task;
   /** \brief the learner's type, required for a training task */
@@ -32,7 +29,6 @@ struct DifactoParam : public dmlc::Parameter<DifactoParam> {
         .add_enum("train", kTrain)
         .add_enum("dump", kDumpModel)
         .add_enum("pred", kPredict)
-        .add_enum("convert", kConvert)
         .describe("Task to be performed by the main program");
   }
 };
@@ -46,7 +42,6 @@ void WarnUnknownKWArgs(const DifactoParam& param, const KWArgs& remain) {
 }
 
 DMLC_REGISTER_PARAMETER(DifactoParam);
-DMLC_REGISTER_PARAMETER(ConverterParam);
 DMLC_REGISTER_PARAMETER(DumpParam);
 
 }  // namespace difacto
@@ -85,13 +80,6 @@ int main(int argc, char *argv[]) {
       break;
     case kPredict:
       LOG(FATAL) << "TODO";
-      break;
-    case kConvert:
-      {
-      Converter converter;
-      WarnUnknownKWArgs(param, converter.Init(kwargs_remain));
-      converter.Run();
-      }
       break;
     default:
       LOG(FATAL) << "unknown task: " << param.task;

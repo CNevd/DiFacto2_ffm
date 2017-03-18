@@ -104,12 +104,6 @@ class SGDLearner : public Learner {
    */
   void IterateData(const sgd::Job& job, sgd::Progress* prog);
 
-  real_t EvaluatePenalty(const SArray<real_t>& weight,
-                         const SArray<int>& w_pos,
-                         const SArray<int>& V_pos);
-  void GetPos(const SArray<int>& len,
-              SArray<int>* w_pos, SArray<int>* V_pos);
-
   /** \brief the model store*/
   Store* store_;
   /** \brief the loss*/
@@ -122,7 +116,6 @@ class SGDLearner : public Learner {
   sgd::Report_prog report_prog_;
   int blk_nthreads_ = DEFAULT_NTHREADS;
   double start_time_;
-  bool do_embedding_ = false;
 
   std::vector<std::function<void(int epoch, const sgd::Progress& train,
                                  const sgd::Progress& val)>> epoch_end_callback_;

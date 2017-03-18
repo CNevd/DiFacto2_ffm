@@ -57,7 +57,7 @@ struct SGDLearnerParam : public dmlc::Parameter<SGDLearnerParam> {
     DMLC_DECLARE_FIELD(data_val).set_default("");
     DMLC_DECLARE_FIELD(model_out).set_default("");
     DMLC_DECLARE_FIELD(model_in).set_default("");
-    DMLC_DECLARE_FIELD(loss).set_default("fm");
+    DMLC_DECLARE_FIELD(loss).set_default("ffm");
     DMLC_DECLARE_FIELD(load_epoch).set_default(-1);
     DMLC_DECLARE_FIELD(max_num_epochs).set_default(20);
     DMLC_DECLARE_FIELD(num_jobs_per_epoch).set_default(10);
@@ -95,12 +95,12 @@ struct SGDUpdaterParam : public dmlc::Parameter<SGDUpdaterParam> {
    *   [-V_init_scale, +V_init_scale]
    */
   float V_init_scale;
-  /** \brief the embedding dimension */
-  int V_dim;
   /** \brief the minimal feature count for allocating V */
   int V_threshold;
-  /** \brief whether use ZF for V means if w=0 V then V=0 */
-  bool l1_shrk;
+  /** \brief the embedding dimension */
+  int V_dim;
+  /** \brief the num of fields */
+  int field_num;
   /** \brief random seed */
   unsigned int seed;
   DMLC_DECLARE_PARAMETER(SGDUpdaterParam) {
@@ -112,9 +112,9 @@ struct SGDUpdaterParam : public dmlc::Parameter<SGDUpdaterParam> {
     DMLC_DECLARE_FIELD(V_lr).set_range(0, 1e10).set_default(.01);
     DMLC_DECLARE_FIELD(V_lr_beta).set_range(0, 10).set_default(1);
     DMLC_DECLARE_FIELD(V_init_scale).set_range(0, 10).set_default(.01);
-    DMLC_DECLARE_FIELD(V_threshold).set_default(10);
+    DMLC_DECLARE_FIELD(V_threshold).set_default(0);
     DMLC_DECLARE_FIELD(V_dim).set_default(0);
-    DMLC_DECLARE_FIELD(l1_shrk).set_default(true);
+    DMLC_DECLARE_FIELD(field_num).set_default(0);
     DMLC_DECLARE_FIELD(seed).set_default(0);
   }
 };

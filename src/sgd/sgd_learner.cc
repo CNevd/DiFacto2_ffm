@@ -35,8 +35,6 @@ KWArgs SGDLearner::Init(const KWArgs& kwargs) {
   auto updater = new SGDUpdater();
   remain = updater->Init(remain);
   remain.push_back(std::make_pair("V_dim", std::to_string(updater->param().V_dim)));
-  // init do embedding
-  if (updater->param().V_dim > 0) do_embedding_ = true;
   // init store
   store_ = Store::Create();
   store_->SetUpdater(std::shared_ptr<Updater>(updater));
@@ -148,22 +146,6 @@ void SGDLearner::RunEpoch(int epoch, int job_type, sgd::Progress* prog) {
   }
 }
 
-void SGDLearner::GetPos(const SArray<int>& len,
-                        SArray<int>* w_pos, SArray<int>* V_pos) {
-  size_t n = len.size();
-  w_pos->resize(n);
-  V_pos->resize(n);
-  int* w = w_pos->data();
-  int* V = V_pos->data();
-  int p = 0;
-  for (size_t i = 0; i < n; ++i) {
-    int l = len[i];
-    w[i] = l == 0 ? -1 : p;
-    V[i] = l > 1 ? p+1 : -1;
-    p += l;
-  }
-}
-
 void SGDLearner::Process(const std::string& args, std::string* rets) {
   if (args.empty()) return;
   using sgd::Job;
@@ -206,22 +188,16 @@ void SGDLearner::IterateData(const sgd::Job& job, sgd::Progress* progress) {
                        std::string* rets) {
         // use potiners here in order to copy into the callback
         SArray<real_t>* values = new SArray<real_t>();
-        SArray<int>* lengths = do_embedding_ ? new SArray<int>() : nullptr;
+        SArray<int>* lengths = nullptr;
         auto pull_callback = [this, batch, values, lengths, progress, on_complete]() {
           // eval loss
           auto data = batch.data.GetBlock();
           progress->nrows += data.size;
           SArray<real_t> pred(data.size);
-          SArray<int> w_pos, V_pos;
-          if (lengths) GetPos(*lengths, &w_pos, &V_pos);
-          std::vector<SArray<char>> inputs = {
-            SArray<char>(*values), SArray<char>(w_pos), SArray<char>(V_pos)};
+          std::vector<SArray<char>> inputs = {SArray<char>(*values)};
           CHECK_NOTNULL(loss_)->Predict(data, inputs, &pred);
           auto loss = loss_->Evaluate(batch.data.label.data(), pred);
           progress->loss += loss;
-          // eval penalty
-          //progress->penalty += EvaluatePenalty(*values, w_pos, V_pos);
-
           // auc, ...
           BinClassMetric metric(batch.data.label.data(), pred.data(),
                                 pred.size(), blk_nthreads_);
@@ -245,8 +221,8 @@ void SGDLearner::IterateData(const sgd::Job& job, sgd::Progress* progress) {
             inputs.push_back(SArray<char>(pred));
             loss_->CalcGrad(data, inputs, &grads);
 
-            // push the gradient, this task is done only if the push is complete
             SArray<int> len = {};
+            // push the gradient, this task is done only if the push is complete
             store_->Push(batch.feaids,
                          Store::kGradient,
                          grads,
@@ -264,8 +240,7 @@ void SGDLearner::IterateData(const sgd::Job& job, sgd::Progress* progress) {
       });
 
   Reader* reader = nullptr;
-  bool push_cnt = job.type == sgd::Job::kTraining && job.epoch == 0 && do_embedding_;
-  push_cnt=false;
+  bool push_cnt = job.type == sgd::Job::kTraining && job.epoch == 0;
 
   if (job.type == sgd::Job::kTraining) {
     reader = new BatchReader(param_.data_in,
@@ -311,32 +286,6 @@ void SGDLearner::IterateData(const sgd::Job& job, sgd::Progress* progress) {
   }
   batch_tracker.Wait();
   delete reader;
-}
-
-real_t SGDLearner::EvaluatePenalty(const SArray<real_t>& weights,
-                                   const SArray<int>& w_pos,
-                                   const SArray<int>& V_pos) {
-  real_t objv = 0;
-  auto param = GetUpdater()->param();
-  if (w_pos.size()) {
-    for (int p : w_pos) {
-      if (p == -1) continue;
-      real_t w = weights[p];
-      objv += param.l1 * fabs(w) + .5 * param.l2 * w * w;
-    }
-    for (int p : V_pos) {
-      if (p == -1) continue;
-      for (int i = 0; i < param.V_dim; ++i) {
-        real_t V = weights[p+i];
-        objv += .5 * param.V_l2 * V * V;
-      }
-    }
-  } else {
-    for (auto w : weights) {
-      objv += param.l1 * fabs(w) + .5 * param.l2 * w * w;
-    }
-  }
-  return objv;
 }
 
 }  // namespace difacto
