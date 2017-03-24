@@ -25,7 +25,7 @@ struct SGDEntry {
   real_t fea_cnt = 0;
   /** \brief V and its aux data */
   real_t *V = nullptr;
-  real_t *Z = nullptr;
+  real_t *Z = nullptr; // cg and z
   /** \brief size of V */
   int size = 0;
   int nnz = 0;
@@ -37,20 +37,20 @@ struct SGDEntry {
     fo->Write(&size, sizeof(size));
     // save V
     fo->Write(V, sizeof(real_t)*size);
-    if (save_aux) fo->Write(Z, sizeof(real_t)*size);
+    if (save_aux) fo->Write(Z, sizeof(real_t)*size*2);
   }
   /** \brief load this entry */
   void LoadEntry(dmlc::Stream* fi, bool has_aux) {
     CHECK_EQ(fi->Read(&size, sizeof(size)), sizeof(size));
     // load V
     V = new real_t[size];
-    Z = new real_t[size];
+    Z = new real_t[size * 2]; // cg and z
     CHECK_EQ(fi->Read(V, sizeof(real_t)*size), sizeof(real_t)*size);
     for (int i = 0; i < size; ++i) { if (V[i] != 0) nnz += 1; }
     if (has_aux) {
-      CHECK_EQ(fi->Read(Z, sizeof(real_t)*size), sizeof(real_t)*size);
+      CHECK_EQ(fi->Read(Z, sizeof(real_t)*size*2), sizeof(real_t)*size*2);
     } else {
-      memset(Z, 0, sizeof(real_t)*size);
+      memset(Z, 0, sizeof(real_t)*size*2);
     }
   }
 };
@@ -108,7 +108,7 @@ class SGDUpdater : public Updater {
         os << '\t' << it.second.V[i];
       }
       if (dump_aux) {
-        for (int i = n; i < n; ++i) {
+        for (int i = 0; i < n*2; ++i) {
           os << '\t' << it.second.Z[i];
         }
       }

@@ -52,7 +52,7 @@ struct SGDLearnerParam : public dmlc::Parameter<SGDLearnerParam> {
   /** \brief wether has aux info */
   bool has_aux;
   DMLC_DECLARE_PARAMETER(SGDLearnerParam) {
-    DMLC_DECLARE_FIELD(data_format).set_default("libsvm");
+    DMLC_DECLARE_FIELD(data_format).set_default("libfm");
     DMLC_DECLARE_FIELD(data_in).set_default("");
     DMLC_DECLARE_FIELD(data_val).set_default("");
     DMLC_DECLARE_FIELD(model_out).set_default("");
@@ -113,8 +113,8 @@ struct SGDUpdaterParam : public dmlc::Parameter<SGDUpdaterParam> {
     DMLC_DECLARE_FIELD(V_lr_beta).set_range(0, 10).set_default(1);
     DMLC_DECLARE_FIELD(V_init_scale).set_range(0, 10).set_default(.01);
     DMLC_DECLARE_FIELD(V_threshold).set_default(0);
-    DMLC_DECLARE_FIELD(V_dim).set_default(0);
-    DMLC_DECLARE_FIELD(field_num).set_default(0);
+    DMLC_DECLARE_FIELD(V_dim).set_range(1, 10000).set_default(4);
+    DMLC_DECLARE_FIELD(field_num).set_range(0, 10000).set_default(0);
     DMLC_DECLARE_FIELD(seed).set_default(0);
   }
 };

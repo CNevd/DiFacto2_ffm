@@ -35,6 +35,7 @@ KWArgs SGDLearner::Init(const KWArgs& kwargs) {
   auto updater = new SGDUpdater();
   remain = updater->Init(remain);
   remain.push_back(std::make_pair("V_dim", std::to_string(updater->param().V_dim)));
+  remain.push_back(std::make_pair("field_num", std::to_string(updater->param().field_num)));
   // init store
   store_ = Store::Create();
   store_->SetUpdater(std::shared_ptr<Updater>(updater));
@@ -180,6 +181,19 @@ void SGDLearner::Process(const std::string& args, std::string* rets) {
   prog.SerializeToString(rets);
 }
 
+void SGDLearner::GetPos(const SArray<int>& len,
+                        SArray<int>* V_pos) {
+  size_t n = len.size();
+  V_pos->resize(n);
+  int* V = V_pos->data();
+  int p = 0;
+  for (size_t i = 0; i < n; ++i) {
+    int l = len[i];
+    V[i] = l == 0 ? -1 : p;
+    p += l;
+  }
+}
+
 void SGDLearner::IterateData(const sgd::Job& job, sgd::Progress* progress) {
   AsyncLocalTracker<BatchJob> batch_tracker;
   batch_tracker.SetExecutor(
@@ -188,13 +202,15 @@ void SGDLearner::IterateData(const sgd::Job& job, sgd::Progress* progress) {
                        std::string* rets) {
         // use potiners here in order to copy into the callback
         SArray<real_t>* values = new SArray<real_t>();
-        SArray<int>* lengths = nullptr;
+        SArray<int>* lengths = new SArray<int>();
         auto pull_callback = [this, batch, values, lengths, progress, on_complete]() {
           // eval loss
           auto data = batch.data.GetBlock();
           progress->nrows += data.size;
           SArray<real_t> pred(data.size);
-          std::vector<SArray<char>> inputs = {SArray<char>(*values)};
+          SArray<int> V_pos;
+          GetPos(*lengths, &V_pos);
+          std::vector<SArray<char>> inputs = {SArray<char>(*values), SArray<char>(V_pos)};
           CHECK_NOTNULL(loss_)->Predict(data, inputs, &pred);
           auto loss = loss_->Evaluate(batch.data.label.data(), pred);
           progress->loss += loss;
@@ -221,12 +237,11 @@ void SGDLearner::IterateData(const sgd::Job& job, sgd::Progress* progress) {
             inputs.push_back(SArray<char>(pred));
             loss_->CalcGrad(data, inputs, &grads);
 
-            SArray<int> len = {};
             // push the gradient, this task is done only if the push is complete
             store_->Push(batch.feaids,
                          Store::kGradient,
                          grads,
-                         lengths ? *lengths : len,
+                         *lengths,
                          [this, on_complete]() { on_complete(); });
           } else {
             // a validation/prediction job

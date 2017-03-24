@@ -32,6 +32,7 @@ struct SharedRowBlockContainer {
     }
     size_t nnz = blk.offset[blk.size] - blk.offset[0];
     index.CopyFrom(blk.index, nnz);
+    field.CopyFrom(blk.field, nnz);
     if (blk.value != nullptr) {
       value.CopyFrom(blk.value, nnz);
     }
@@ -59,6 +60,8 @@ struct SharedRowBlockContainer {
                  [data](dmlc::real_t* ptr) { data->weight.clear(); });
     index.reset(data->index.data(), data->index.size(),
                 [data](IndexType* ptr) { data->index.clear(); });
+    field.reset(data->field.data(), data->field.size(),
+                [data](IndexType* ptr) { data->field.clear(); });
     value.reset(data->value.data(), data->value.size(),
                 [data](dmlc::real_t* ptr) { data->value.clear(); });
   }
@@ -79,7 +82,9 @@ struct SharedRowBlockContainer {
       blk.weight = weight.data();
     }
     CHECK_EQ(index.size(), offset.back() - offset.front());
+    CHECK_EQ(field.size(), offset.back() - offset.front());
     blk.index = index.data();
+    blk.field = field.data();
     blk.value = nullptr;
     if (value.size()) {
       CHECK_EQ(value.size(), offset.back() - offset.front());
@@ -96,6 +101,8 @@ struct SharedRowBlockContainer {
   SArray<dmlc::real_t> weight;
   /*! \brief feature index */
   SArray<IndexType> index;
+  /*! \brief feature field */
+  SArray<IndexType> field;
   /*! \brief feature value */
   SArray<dmlc::real_t> value;
 };

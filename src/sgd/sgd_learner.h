@@ -104,6 +104,8 @@ class SGDLearner : public Learner {
    */
   void IterateData(const sgd::Job& job, sgd::Progress* prog);
 
+  void GetPos(const SArray<int>& len, SArray<int>* V_pos);
+
   /** \brief the model store*/
   Store* store_;
   /** \brief the loss*/
