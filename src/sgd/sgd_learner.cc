@@ -65,7 +65,7 @@ void SGDLearner::RunScheduler() {
     }
   }
 
-  if (0) {
+  if (param_.task == 2) {
     CHECK(param_.model_in.size()) << "Prediction needs model_in";
     sgd::Progress pred_prog;
     LOG(INFO) << "Start predicting...";

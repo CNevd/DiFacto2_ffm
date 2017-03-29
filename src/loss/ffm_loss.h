@@ -134,6 +134,7 @@ class FFMLoss : public Loss {
     for (size_t i = 0; i < p.size(); ++i) {
       real_t y = data.label[i] > 0 ? 1 : -1;
       p[i] = - y / (1 + std::exp(y * p[i]));
+      if (data.weight) p[i] *= data.weight[i];
     }
 
 #pragma omp parallel num_threads(nthreads_)
@@ -154,11 +155,11 @@ class FFMLoss : public Loss {
             for (int k = 0; k < V_dim; ++k) {
               if (data.value) {
                 real_t vv = data.value[j1] * data.value[j2];
-                (*grad)[idx1 + k] += weights[idx2 + k] * vv;
-                (*grad)[idx2 + k] += weights[idx1 + k] * vv;
+                (*grad)[idx1 + k] += weights[idx2 + k] * p[i] * vv;
+                (*grad)[idx2 + k] += weights[idx1 + k] * p[i] * vv;
               } else {
-                (*grad)[idx1 + k] += weights[idx2 + k];
-                (*grad)[idx2 + k] += weights[idx1 + k];
+                (*grad)[idx1 + k] += weights[idx2 + k] * p[i];
+                (*grad)[idx2 + k] += weights[idx1 + k] * p[i];
               }
             }
           }

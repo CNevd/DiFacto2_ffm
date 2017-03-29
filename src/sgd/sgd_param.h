@@ -51,6 +51,8 @@ struct SGDLearnerParam : public dmlc::Parameter<SGDLearnerParam> {
   real_t stop_val_auc;
   /** \brief wether has aux info */
   bool has_aux;
+  /** \brief task only for prediction */
+  int task;
   DMLC_DECLARE_PARAMETER(SGDLearnerParam) {
     DMLC_DECLARE_FIELD(data_format).set_default("libfm");
     DMLC_DECLARE_FIELD(data_in).set_default("");
@@ -70,6 +72,7 @@ struct SGDLearnerParam : public dmlc::Parameter<SGDLearnerParam> {
     DMLC_DECLARE_FIELD(stop_rel_objv).set_default(1e-5);
     DMLC_DECLARE_FIELD(stop_val_auc).set_default(1e-5);
     DMLC_DECLARE_FIELD(has_aux).set_default(false);
+    DMLC_DECLARE_FIELD(task).set_default(0);
   }
 };
 

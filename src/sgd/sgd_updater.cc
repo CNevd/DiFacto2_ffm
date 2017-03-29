@@ -98,12 +98,23 @@ void SGDUpdater::Update(const SArray<feaid_t>& fea_ids,
 void SGDUpdater::UpdateV(real_t const* gV, SGDEntry* e) {
   int nnz = e->nnz;
   for (int i = 0; i < feat_dim; ++i) {
+    real_t sg = e->Z[i]
     real_t vi = e->V[i];
-    real_t g = gV[i] + param_.V_l2 * e->V[i];
-    real_t cg = e->Z[i];
-    e->Z[i] = sqrt(cg * cg + g * g);
-    float eta = param_.V_lr / (e->Z[i] + param_.V_lr_beta);
-    e->V[i] -= eta * g;
+    // update sqrt_g
+    gv = gV[i];
+    gv += vi * param_.l2;
+    e->Z[i] = sqrt(sg * sg + gv * gv);
+    // update z
+    e->Z[i + feat_dim] -= gv - (e->Z[i] - sg) / param_.lr * vi;
+
+    real_t z = e->Z[i + feat_dim];
+    real_t l1 = param_.l1;
+    if (z <= l1 && z >= - l1) {
+      e->V[i] = 0;
+    } else {
+      real_t eta = (param_.lr_beta + e->Z[i]) / param_.lr;
+      e->V[i] = (z > 0 ? z - l1 : z + l1) / eta;
+    }
 
     // update statistics
     if (vi == 0 && e->V[i] != 0) {
