@@ -75,7 +75,6 @@ void SGDUpdater::Update(const SArray<feaid_t>& fea_ids,
     }
   } else if (value_type == Store::kGradient) {
     size_t size = fea_ids.size();
-    CHECK_EQ(values.size(), size * feat_dim);
     CHECK_EQ(lens.size(), size);
     int p = 0;
     real_t* v = values.data();
@@ -98,10 +97,10 @@ void SGDUpdater::Update(const SArray<feaid_t>& fea_ids,
 void SGDUpdater::UpdateV(real_t const* gV, SGDEntry* e) {
   int nnz = e->nnz;
   for (int i = 0; i < feat_dim; ++i) {
-    real_t sg = e->Z[i]
+    real_t sg = e->Z[i];
     real_t vi = e->V[i];
     // update sqrt_g
-    gv = gV[i];
+    real_t gv = gV[i];
     gv += vi * param_.l2;
     e->Z[i] = sqrt(sg * sg + gv * gv);
     // update z

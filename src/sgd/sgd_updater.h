@@ -71,13 +71,15 @@ class SGDUpdater : public Updater {
   void Load(dmlc::Stream* fi) override {
     bool has_aux;
     feaid_t key;
+    int64_t loaded = 0;
     if (fi->Read(&has_aux, sizeof(bool)) != sizeof(bool)) return;
     while (true) {
       if (fi->Read(&key, sizeof(feaid_t)) != sizeof(feaid_t)) break;
       model_[key].LoadEntry(fi, has_aux);
+      loaded ++ ;
       new_w += model_[key].nnz;
     }
-    LOG(INFO) << "loaded " << new_w << " kv pairs";
+    LOG(INFO) << "loaded " << loaded << " kv pairs";
   };
 
   void Save(bool save_aux, dmlc::Stream *fo) const override {

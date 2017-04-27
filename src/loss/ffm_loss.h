@@ -28,7 +28,6 @@ struct FFMLossParam : public dmlc::Parameter<FFMLossParam> {
 };
 /**
  * \brief the factonization machine loss
- * :math:`f(x) = \langle w, x \rangle + \frac{1}{2} \|V x\|_2^2 - \sum_{i=1}^d x_i^2 \|V_i\|^2_2`
  */
 class FFMLoss : public Loss {
  public:
@@ -82,8 +81,8 @@ class FFMLoss : public Loss {
             int f1 = data.field[j1], f2 = data.field[j2];
             real_t ww = 0.;
             for (int k = 0; k < V_dim; ++k) {
-              ww += weights[ind1 * feat_num + f1 * V_dim + k] * \
-                    weights[ind2 * feat_num + f2 * V_dim + k];
+              ww += weights[V_pos[ind1] + f1 * V_dim + k] * \
+                    weights[V_pos[ind2] + f2 * V_dim + k];
             }
             if (data.value) {
               real_t vv = data.value[j1] * data.value[j2];
@@ -150,8 +149,8 @@ class FFMLoss : public Loss {
           for (size_t j2 = data.offset[i]+1; j2 < data.offset[i+1]; ++j2) {
             int ind2 = data.index[j2];
             if (V_pos[ind2] < 0) continue;
-            int idx1 = ind1 * feat_num + data.field[j1] * V_dim;
-            int idx2 = ind2 * feat_num + data.field[j2] * V_dim;
+            int idx1 = V_pos[ind1] + data.field[j1] * V_dim;
+            int idx2 = V_pos[ind2] + data.field[j2] * V_dim;
             for (int k = 0; k < V_dim; ++k) {
               if (data.value) {
                 real_t vv = data.value[j1] * data.value[j2];
