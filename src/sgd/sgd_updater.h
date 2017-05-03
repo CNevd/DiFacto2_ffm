@@ -8,6 +8,7 @@
 #include <vector>
 #include <mutex>
 #include <limits>
+#include <random>
 #include "dmlc/io.h"
 #include "difacto/updater.h"
 #include "./sgd_param.h"
@@ -157,6 +158,13 @@ class SGDUpdater : public Updater {
 
   /** \brief dim of a feature */
   int feat_dim = 0;
+
+  /** \brief coef for model initialization*/
+  float coef = 1.0;
+
+  /** \brief generator for model initialization */
+  std::default_random_engine generator;
+  std::uniform_real_distribution<float> distribution;
 
   SGDUpdaterParam param_;
   std::unordered_map<feaid_t, SGDEntry> model_;
