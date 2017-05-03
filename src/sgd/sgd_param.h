@@ -69,7 +69,7 @@ struct SGDLearnerParam : public dmlc::Parameter<SGDLearnerParam> {
     DMLC_DECLARE_FIELD(pred_prob).set_default(true);
     DMLC_DECLARE_FIELD(neg_sampling).set_default(1);
     DMLC_DECLARE_FIELD(report_interval).set_default(1);
-    DMLC_DECLARE_FIELD(stop_rel_objv).set_default(1e-5);
+    DMLC_DECLARE_FIELD(stop_rel_objv).set_default(1e-6);
     DMLC_DECLARE_FIELD(stop_val_auc).set_default(1e-5);
     DMLC_DECLARE_FIELD(has_aux).set_default(false);
     DMLC_DECLARE_FIELD(task).set_default(0);
@@ -114,7 +114,7 @@ struct SGDUpdaterParam : public dmlc::Parameter<SGDUpdaterParam> {
     DMLC_DECLARE_FIELD(lr_beta).set_range(0, 1e10).set_default(1);
     DMLC_DECLARE_FIELD(V_lr).set_range(0, 1e10).set_default(.01);
     DMLC_DECLARE_FIELD(V_lr_beta).set_range(0, 10).set_default(1);
-    DMLC_DECLARE_FIELD(V_init_scale).set_range(0, 10).set_default(.01);
+    DMLC_DECLARE_FIELD(V_init_scale).set_range(0, 10).set_default(1.0);
     DMLC_DECLARE_FIELD(V_threshold).set_default(0);
     DMLC_DECLARE_FIELD(V_dim).set_range(1, 10000).set_default(4);
     DMLC_DECLARE_FIELD(field_num).set_range(0, 10000).set_default(0);
