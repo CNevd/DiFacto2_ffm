@@ -83,13 +83,17 @@ void Localizer::RemapIndex(
   o->offset.resize(blk.size+1); o->offset[0] = 0;
   o->index.resize(matched);
   o->field.resize(matched);
-  if (blk.value) o->value.resize(matched);
+  o->value.resize(matched);
 
   size_t k = 0;
   for (size_t i = 0; i < blk.size; ++i) {
+    real_t norm = 0;
+    for (size_t j = blk.offset[i]; j < blk.offset[i+1]; ++j) {
+      norm += blk.value ? blk.value[j]*blk.value[j] : 1;
+    }
     for (size_t j = blk.offset[i]; j < blk.offset[i+1]; ++j) {
       if (remapped_idx[j] == 0) continue;
-      if (blk.value) o->value[k] = blk.value[j];
+      o->value[k] = (blk.value ? blk.value[j]: 1)/sqrt(norm);
       o->field[k] = blk.field[j];
       o->index[k++] = remapped_idx[j] - 1;
     }
