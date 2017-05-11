@@ -76,10 +76,10 @@ build/difacto: build/main.o build/libdifacto.a $(DMLC_DEPS) $(PS_DEPS)
 dmlc-core/libdmlc.a:
 	$(MAKE) -C dmlc-core libdmlc.a DEPS_PATH=$(DEPS_PATH) CXX=$(CXX)
 
-include tests/cpp/test.mk
+#include tests/cpp/test.mk
 
 
-test: build/difacto_tests
+#test: build/difacto_tests
 
 -include build/*.d
 -include build/*/*.d

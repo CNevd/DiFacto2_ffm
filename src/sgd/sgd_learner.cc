@@ -174,8 +174,9 @@ void SGDLearner::Process(const std::string& args, std::string* rets) {
       std::string filename = ModelName(param_.model_out, job.epoch);
       std::unique_ptr<dmlc::Stream> fo(
           dmlc::Stream::Create(filename.c_str(), "w"));
-      GetUpdater()->Save(param_.has_aux, fo.get());
-      break;
+      //GetUpdater()->Save(param_.has_aux, fo.get());
+      GetUpdater()->Dump(param_.has_aux,true,fo.get());
+	break;
     }
   }
   prog.SerializeToString(rets);
