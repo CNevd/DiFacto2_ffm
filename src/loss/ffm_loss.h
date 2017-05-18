@@ -63,6 +63,7 @@ class FFMLoss : public Loss {
                const SArray<int>& V_pos,
                SArray<real_t>* pred) {
     SArray<real_t> w = weights;
+
     int V_dim = param_.V_dim;
 #pragma omp parallel num_threads(nthreads_)
     {
@@ -75,10 +76,11 @@ class FFMLoss : public Loss {
         for (size_t j1 = data.offset[i]; j1 < data.offset[i+1]; ++j1) {
           int ind1 = data.index[j1];
           if (V_pos[ind1] < 0) continue;
-          for (size_t j2 = data.offset[i]+1; j2 < data.offset[i+1]; ++j2) {
+          int f1 = data.field[j1];
+          for (size_t j2 = j1+1; j2 < data.offset[i+1]; ++j2) {
             int ind2 = data.index[j2];
             if (V_pos[ind2] < 0) continue;
-            int f1 = data.field[j1], f2 = data.field[j2];
+            int f2 = data.field[j2];
             real_t ww = 0.;
             for (int k = 0; k < V_dim; ++k) {
               ww += weights[V_pos[ind1] + f2 * V_dim + k] * \
@@ -92,7 +94,7 @@ class FFMLoss : public Loss {
             }
           }
         }
-        (*pred)[i] = p > 20 ? 20 : (p < -20 ? -20 : p);
+        (*pred)[i] = p;
       }
     }
   }
@@ -146,7 +148,7 @@ class FFMLoss : public Loss {
         for (size_t j1 = data.offset[i]; j1 < data.offset[i+1]; ++j1) {
           int ind1 = data.index[j1];
           if (V_pos[ind1] < 0) continue;
-          for (size_t j2 = data.offset[i]+1; j2 < data.offset[i+1]; ++j2) {
+          for (size_t j2 = j1+1; j2 < data.offset[i+1]; ++j2) {
             int ind2 = data.index[j2];
             if (V_pos[ind2] < 0) continue;
             int idx1 = V_pos[ind1] + data.field[j2] * V_dim;
@@ -163,6 +165,9 @@ class FFMLoss : public Loss {
             }
           }
         }
+      }
+      if (data.size > 1) {
+        for (real_t& g : (*grad)) g = g / data.size;
       }
     }
   }
