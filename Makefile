@@ -7,7 +7,7 @@ USE_CITY=0
 USE_LZ4=1
 NO_REVERSE_ID=0
 
-all: build/difacto 
+all: build/difacto
 
 include ps-lite/make/deps.mk
 include ps-lite/make/ps.mk
@@ -76,8 +76,11 @@ build/difacto: build/main.o build/libdifacto.a $(DMLC_DEPS) $(PS_DEPS)
 dmlc-core/libdmlc.a:
 	$(MAKE) -C dmlc-core libdmlc.a DEPS_PATH=$(DEPS_PATH) CXX=$(CXX)
 
-#include tests/cpp/test.mk
+ps-lite/build/libps.a:
+	$(MAKE) -C ps-lite ps DEPS_PATH=$(DEPS_PATH) CXX=$(CXX)
 
+
+#include tests/cpp/test.mk
 
 #test: build/difacto_tests
 
